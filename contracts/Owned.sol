@@ -1,30 +1,27 @@
-pragma solidity ^0.4.6;
+pragma solidity ^0.4.15;
 
 
-contract Owner {
+contract Owned {
 
   address public owner;
-  event LogNewOwner (address owner, address newOwner);
+
+  event LogNewOwner (address _owner, address newOwner);
 
   modifier onlyOwner {
-    if(msg.sender != owner) throw;
+    if(msg.sender != owner) revert();
     _;
   }
 
   function Owned() {
-      owner = msg.sender
+      owner = msg.sender;
   }
 
-  function changeOwner (address newOwner){
+  function changeOwner (address newOwner)
       onlyOwner
       returns(bool success){
-        if (newOwner == 0) throw;
+        if (newOwner == 0) revert();
         LogNewOwner(owner, newOwner);
         owner = newOwner;
         return true;
       }
   }
-
-
-
-}

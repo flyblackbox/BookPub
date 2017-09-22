@@ -9,7 +9,7 @@ contract TestBookQueueLib{
   BookQueueLib.BookQueue queue;
 
   function beforeAll(){
-    queue = BookQueueLib.createNew(5);
+    //queue = BookQueueLib.createNew();
   }
 
   function test0_AddFirstReader(){

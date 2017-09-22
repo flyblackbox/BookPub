@@ -1,6 +1,6 @@
-pragma solidity ^0.4.6;
+pragma solidity ^0.4.15;
 
-import "Owned.sol";
+import "./Owned.sol";
 
 contract Stoppable is Owned {
 
@@ -9,7 +9,7 @@ contract Stoppable is Owned {
   event LogRunSwitch(bool switchSetting);
 
   modifier onlyIfRunning {
-    if(!running) throw;
+    if(!running) revert();
     _;
   }
 

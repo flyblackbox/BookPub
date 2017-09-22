@@ -1,22 +1,21 @@
 pragma solidity ^0.4.15;
 
 import "./GroveLib.sol";
+import "./BookPub.sol";
 
 library BookQueueLib {
-
   using GroveLib for GroveLib.Index;
 
     struct BookQueue {
       GroveLib.Index bucketIndex;
       mapping(bytes32 => address[]) buckets;
       bytes32 highestBucketID;
-    }
-
-    function createNew(uint bookID)
+      }
+    function createQueue()
       internal
       returns (BookQueue){
         return BookQueue({
-            bucketIndex: GroveLib.Index(bytes32(bookID)),
+            bucketIndex: GroveLib.Index(sha3(this, block.number)),
             highestBucketID: 0
         });
       }
@@ -33,11 +32,13 @@ library BookQueueLib {
       addToBucket(queue, bucketID, readerAddress);
 
       }
+    function retrieve(address readerAddress){}
     function findBucket(BookQueue storage queue, int value)
       internal
       returns (bytes32 bucketID){
       bucketID = queue.bucketIndex.query("==", value);
       }
+    function remove(address reader) {}
     function createBucket(BookQueue storage queue, int value)
       internal
       returns(bytes32 bucketID){
@@ -50,37 +51,19 @@ library BookQueueLib {
       bucket.push(readerAddress);
 
       }
-
     function getFirstInLine(BookQueue storage queue)
       constant
       returns(address readerAddress){
         var bucketID = queue.highestBucketID;
         var bucket = queue.buckets[bucketID];
         return bucket[bucket.length - 1];
-
-    }
-
+      }
     function getLinePosition(BookQueue storage queue, uint index)
       constant
       returns(address readerAddress){
         /*var bucketID = queue.highestBucketID;
         var bucket = queue.buckets[bucketID];
         return bucket[bucket.length - 1];*/
-
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      }
 
 }
