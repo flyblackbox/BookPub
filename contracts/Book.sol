@@ -9,6 +9,8 @@ contract Book is HumanStandardToken {
   address[] readers;
   uint readershipStake;
   uint balance;
+  uint goal;
+  uint userCount;
   BookQueueLib.BookQueue queue;
 
   function Book
@@ -16,6 +18,8 @@ contract Book is HumanStandardToken {
      address _authorAddress,
      bytes metadata,
      uint _readershipStake,
+     uint _goal,
+     uint _userCount
      uint _initialAmount,
      string _tokenName,
      uint8 _decimalUnits,
@@ -23,8 +27,11 @@ contract Book is HumanStandardToken {
     HumanStandardToken(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol){
     authorAddress = _authorAddress;
     readershipStake = _readershipStake;
+    goal = _goal;
+    userCount = _userCount;
   }
   event BoughtCoin(address reader, uint amountPaid);
+  event GoalMet(bool success);
 
   //Book reader details [eligibleForBook, coinCount]
   struct BookReader {
@@ -33,6 +40,10 @@ contract Book is HumanStandardToken {
   }
 
   mapping (address => BookReader) readerEligibilityAndBalance;
+
+  function goalMet() {
+    return balance >= goal;
+  }
 
   function buyCoin()
     public
@@ -60,6 +71,9 @@ contract Book is HumanStandardToken {
       queue.addToQueueFirst(int(readerEligibilityAndBalance[msg.sender].coinCount), msg.sender);
     }
 
+    if (goalMet()) {
+      GoalMet(true);
+    }
 
     queue.addToQueue(int(msg.value), msg.sender);
     return true;

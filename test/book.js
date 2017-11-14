@@ -84,16 +84,16 @@ contract('Book', function(accounts) {
     })
       .then(inst => {
         instance = inst;
-        return instance.buyCoin({from: accounts[0], value: 100});
+        return instance.buyCoin({from: accounts[0], value: 100}); // [account0]
       })
       .then(() => {
-        return instance.buyCoin({from: accounts[1], value: 99});
+        return instance.buyCoin({from: accounts[1], value: 99}); // [account0] [account1]
       })
       .then(() => {
-        return instance.buyCoin({from: accounts[1], value: 1});
+        return instance.buyCoin({from: accounts[1], value: 1}); // [account1, account0]
       })
       .then(() => {
-        return instance.buyCoin({from: accounts[2], value: 50});
+        return instance.buyCoin({from: accounts[2], value: 50}); // [account1, account0] [acount2]
       })
       .then(() => {
         return instance.getFirstInLine();
