@@ -9,7 +9,6 @@ library BookQueueLib {
   int256 constant INT256_MAX = int256(~((uint256(1) << 255)));
 
   struct BucketQueue {
-    uint size;
     GroveLib.Index bucketIndex;
     mapping (bytes32 => address) readerAddress;
     int lastIndex;
@@ -70,18 +69,19 @@ library BookQueueLib {
   }
 
   function remove(BookQueue storage queue, address reader, int value)
-    returns (uint size)
+    returns (bool success)
   {
     bytes32 bucketID = queue.bucketIndex.query('==', value);
     BucketQueue bucket = queue.buckets[bucketID];
     bucket.bucketIndex.remove(bytes32(reader));
-    bucket.size -= 1;
-    if (bucket.size == 0) {
+    bytes32 nextInLine = bucket.bucketIndex.query('>=', bucket.firstIndex);
+    if (nextInLine == bytes32(0)) {
       queue.bucketIndex.remove(bucketID);
       if (bucketID == queue.highestBucketID) {
         queue.highestBucketID = queue.bucketIndex.query('<=', INT256_MAX);
       }
     }
+    return true;
   }
 
   function createBucket(BookQueue storage queue, int value)
@@ -98,7 +98,6 @@ library BookQueueLib {
   {
     BucketQueue bucket = queue.buckets[bucketID];
     bucket.lastIndex += 1;
-    bucket.size += 1;
     bucket.bucketIndex.insert(bytes32(readerAddress), bucket.lastIndex);
     bucket.readerAddress[bytes32(readerAddress)] = readerAddress;
   }
@@ -108,7 +107,6 @@ library BookQueueLib {
   {
     var bucket = queue.buckets[bucketID];
     bucket.firstIndex -= 1;
-    bucket.size += 1;
     bucket.bucketIndex.insert(bytes32(readerAddress), bucket.firstIndex);
     bucket.readerAddress[bytes32(readerAddress)] = readerAddress;
   }
