@@ -1,16 +1,18 @@
 pragma solidity ^0.4.15;
 
 import "./BookQueueLib.sol";
+import "./BookDistLib.sol";
 import "tokens/HumanStandardToken.sol";
 
 contract Book is HumanStandardToken {
   using BookQueueLib for BookQueueLib.BookQueue;
   address authorAddress;
-  address[] readers;
   uint readershipStake;
   uint balance;
   uint goal;
+  uint toBeShipped;
   uint userCount;
+  uint eligibleCount;
   BookQueueLib.BookQueue queue;
 
   function Book
@@ -19,7 +21,9 @@ contract Book is HumanStandardToken {
      bytes metadata,
      uint _readershipStake,
      uint _goal,
-     uint _userCount
+     uint _toBeShipped,
+     uint _userCount,
+     uint _eligibleCount,
      uint _initialAmount,
      string _tokenName,
      uint8 _decimalUnits,
@@ -29,19 +33,35 @@ contract Book is HumanStandardToken {
     readershipStake = _readershipStake;
     goal = _goal;
     userCount = _userCount;
+    eligibleCount = _eligibleCount;
+    toBeShipped = _toBeShipped;
   }
+
+  enum ReaderStatus { Waiting, Eligible, Requested, Shipped, Confirmed }
+
+  struct Reader {
+    uint id;
+    bytes readerUsername;      //Reader's username
+    ReaderStatus status;
+  }
+
   event BoughtCoin(address reader, uint amountPaid);
   event GoalMet(bool success);
+  event NewQualifyingReaders ();          //Some readers become eligible after goal is met
+  event BookRequested(address reader);    //Reader claims book
+  event LogBookShipped(address reader);   //Author sends shipping confirmation
+  event LogBookConfirmed(address reader);   //Author sends shipping confirmation
 
-  //Book reader details [eligibleForBook, coinCount]
-  struct BookReader {
-    bool eligibleForBook;      //Reader's username
-    uint coinCount;          //Does this reader qualify for hard copy to be shipped?
+  mapping (address => Reader) readers;
+
+  modifier goalMet {
+    require (goalReached());
+    _;
   }
 
-  mapping (address => BookReader) readerEligibilityAndBalance;
-
-  function goalMet() {
+  function goalReached()
+    returns (bool goalMet)
+  {
     return balance >= goal;
   }
 
@@ -49,33 +69,30 @@ contract Book is HumanStandardToken {
     public
     payable
     returns(bool success){
-    balance += msg.value;
 
     // Reader buys coins the first time
-    if (readerEligibilityAndBalance[msg.sender].coinCount == 0) {
-      //Set coinCount as amountPaid
-      readerEligibilityAndBalance[msg.sender] = BookReader({
-        eligibleForBook: false,
-        coinCount: readerEligibilityAndBalance[msg.sender].coinCount += msg.value
-      });
-      readers.push(msg.sender);
+    if (balances[msg.sender] == 0) {
+      // Add reader
+      readers[msg.sender] = Reader({ id: userCount, readerUsername: 'Anonymous', status: ReaderStatus.Waiting });
+      userCount++;
 
-      // Add the reader to the que in the
-      queue.addToQueue(int(msg.value), msg.sender);
+      // Add the reader to the queue in the last position
     } else { //Reader buys more coins later on
-      queue.remove(msg.sender, int(readerEligibilityAndBalance[msg.sender].coinCount));
-      readerEligibilityAndBalance[msg.sender].coinCount += msg.value;
-
-      // Unsure about this, seems like adding the user first when he buys more coins is bound to be gamed.
-      // I.e why buy 100 when you can buy 50 + 50 and be at the front of the 100: line...
-      queue.addToQueueFirst(int(readerEligibilityAndBalance[msg.sender].coinCount), msg.sender);
+      // Remove the reader to the queue he is a part of and move him to his new queue
+      queue.remove(msg.sender, int(balances[msg.sender]));
     }
 
-    if (goalMet()) {
+    balances[msg.sender] += msg.value;
+    queue.addToQueue(int(balances[msg.sender]), msg.sender);
+
+    if (goalReached()) {
       GoalMet(true);
     }
 
     queue.addToQueue(int(msg.value), msg.sender);
+
+    balance += msg.value;
+
     return true;
   }
 
@@ -86,13 +103,17 @@ contract Book is HumanStandardToken {
     return queue.getFirstInLine();
   }
 
+  // Anyone can call this
+  // Idealy the author should as soon as the goal is met
   function setFirstEligible()
+    goalMet
     returns (bool success)
   {
+    require(eligibleCount <= toBeShipped);
+    eligibleCount++;
     address first = queue.getFirstInLine();
-    BookReader reader = readerEligibilityAndBalance[first];
-    reader.eligibleForBook = true;
-    queue.remove(first, int(reader.coinCount));
+    readers[first].status = ReaderStatus.Eligible;
+    queue.remove(first, int(balances[first]));
     return true;
   }
 
@@ -100,6 +121,28 @@ contract Book is HumanStandardToken {
   function withdrawCapital()
     /*isAuthor()*/{
     authorAddress.transfer(balance);
+  }
+
+  //Readers can claim hard copy after they become eligible
+  function requestDelivery (address readerAddress) returns (bool success) {
+    require(readers[readerAddress].status == ReaderStatus.Eligible);
+    readers[readerAddress].status = ReaderStatus.Requested;
+    BookRequested(msg.sender);
+    return true;
+  }
+
+  function markShipped (address reader) returns (bool success) {
+    require(readers[reader].status == ReaderStatus.Requested);
+    readers[reader].status = ReaderStatus.Shipped;
+    LogBookShipped(reader);
+    return true;
+  }
+
+  function confirmDelivery (address reader) returns (bool success) {
+    require(readers[reader].status == ReaderStatus.Shipped);
+    readers[reader].status = ReaderStatus.Confirmed;
+    LogBookConfirmed(reader);
+    return true;
   }
 
 }
