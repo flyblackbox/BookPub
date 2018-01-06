@@ -13,16 +13,16 @@ library BookDistLib {
   function prepShip(uint readers){
     //getFirstInLine(BookQueue storage queue)
     //Book.readerEligibilityAndBalance.eligibleForBook = true;
-    }
+  }
   //Readers can claim hard copy after they become eligible
   function requestDelivery (){
     //require(Book.readerEligibilityAndBalance.eligibleForBook = false = true);
     //Book.readerEligibilityAndBalance.eligibleForBook = false;
     BookRequested(msg.sender);
-    }
+  }
   function markShipped (address reader){
     //How should I alert the reader?
     LogBookShipped(reader);
-    }
+  }
 
 }
