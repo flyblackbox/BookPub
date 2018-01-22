@@ -41,7 +41,8 @@ contract BookPub is Stoppable {
     mapping(address => Reader) readers;
     mapping(address => Author) authors;
     mapping(uint => Book) books;
-
+    mapping(uint => uint) partnerShares;
+    mapping(uint=>mapping(uint=>uint)) partnerShares;
     //Reader details [readersUsername, bookIDs purchased array]
     struct Reader {
       bytes readerUsername;      //Reader's username
@@ -54,13 +55,30 @@ contract BookPub is Stoppable {
        uint totalEarned;            //How much has this writer earned?
        //uint[] booksPublished;       //BookIDs of all published books
       }
+
     //Book details [bookID, authorAddress, readershipStake, readers array]
     struct Book {
       uint bookID;                 //Global book ID ++1
       address authorAddress;       //Who was the author? Can be used to access Authors mapping
-      uint readershipStake;         //How much equity did the author provision for readers?
-      }
+      uint readershipStake;
+      uint[] Partners;
+      uint NumPartners;
+      uint goal	;
+      uint eligibleCount;
+	    uint startdate;
+	    uint enddate;
 
+	    string tokenName;
+	    string tokenSymbol;
+	    string governanceModel;
+	  //How much equity did the author provision for readers?
+      }
+    function addPartner(uint _bookID,uint _partnerID ,uint _share){
+      uint i=books[_bookID].NumPartners;
+	    partnershares[_bookID][i]=__share;
+
+      books[_bookID].NumPartners=i+1;
+    }
     function becomeReader(bytes _readerUsername) {
       //Reader signs up to buy book coins
       readers[msg.sender] = Reader({
@@ -75,14 +93,64 @@ contract BookPub is Stoppable {
                                   totalEarned: 0
                                   });
                                 }
-    function publishBook (uint _readershipStake)
+
+
+
+    function publishBook (uint _readershipStake,string _tokenName,string _tokenSymbol,string _governanceModel)
       isAuthor() {
-        bookID += 1;
+       bookID += 1;
+		   uint t=0;
+       //uint[] memory P = new uint[](10);//default 10 possible partners (possibly add option for more or less)
+		   //uint[]  P;
+		   //P[1]=12;
+
         books[bookID] = Book({
                             bookID: bookID,
                             authorAddress: msg.sender,
-                            readershipStake: _readershipStake
+                            readershipStake: _readershipStake,
+                            tokenName:_tokenName,
+                            tokenSymbol:_tokenSymbol,
+							              governanceModel:_governanceModel,
+							              goal:t,
+						                startdate:t,
+	 						              enddate:t,
+	 						              eligibleCount:t,
+						               //	Partners:P,
+                            NumPartners:0
+
                             });
                           }
+  function modifyBook(uint _bookID,uint _goal,uint _startdate,uint _enddate,uint _eligibleCount)
+	 isAuthor()   {
+	              Book memory temp=books[_bookID];
+	              temp.goal=_goal;
+	              temp.startdate=_startdate;
+	              temp.enddate=_enddate;
+	              temp.eligibleCount=_eligibleCount;
 
+
+
+
+   }
+   function structRet(uint n)  public returns(uint){
+   Book memory b= books[n];
+   return b.readershipStake;
+
+   }
+   function nameret(uint n)  public returns(string){
+   Book memory b= books[n];
+    return b.tokenName;
+
+   }
+   function symbolret(uint n)  public returns(string){
+   Book memory b= books[n];
+   return b.tokenSymbol;
+
+   }
+    function partner(uint n,uint m)  public returns(uint){
+   Book memory b= books[n];
+  uint c= b.Partners[m];
+  return c;
+
+   }
 }
