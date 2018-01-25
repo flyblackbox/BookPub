@@ -41,7 +41,7 @@ contract BookPub is Stoppable {
     mapping(address => Reader) readers;
     mapping(address => Author) authors;
     mapping(uint => Book) books;
-    mapping(uint => uint) partnerShares;
+    //mapping(uint => uint) partnerShares;
     mapping(uint=>mapping(uint=>uint)) partnerShares;
     //Reader details [readersUsername, bookIDs purchased array]
     struct Reader {
@@ -61,8 +61,8 @@ contract BookPub is Stoppable {
       uint bookID;                 //Global book ID ++1
       address authorAddress;       //Who was the author? Can be used to access Authors mapping
       uint readershipStake;
-      uint[] Partners;
-      uint NumPartners;
+      //uint[] Partners;
+      uint numPartners;
       uint goal	;
       uint eligibleCount;
 	    uint startdate;
@@ -73,11 +73,11 @@ contract BookPub is Stoppable {
 	    string governanceModel;
 	  //How much equity did the author provision for readers?
       }
-    function addPartner(uint _bookID,uint _partnerID ,uint _share){
-      uint i=books[_bookID].NumPartners;
-	    partnershares[_bookID][i]=__share;
+    function addPartner(uint _bookID,uint _share){
+      uint i=books[bookID].numPartners;
+	    partnerShares[_bookID][i]=_share;
 
-      books[_bookID].NumPartners=i+1;
+      books[_bookID].numPartners=i+1;
     }
     function becomeReader(bytes _readerUsername) {
       //Reader signs up to buy book coins
@@ -99,7 +99,7 @@ contract BookPub is Stoppable {
     function publishBook (uint _readershipStake,string _tokenName,string _tokenSymbol,string _governanceModel)
       isAuthor() {
        bookID += 1;
-		   uint t=0;
+		   uint t=10;
        //uint[] memory P = new uint[](10);//default 10 possible partners (possibly add option for more or less)
 		   //uint[]  P;
 		   //P[1]=12;
@@ -116,41 +116,52 @@ contract BookPub is Stoppable {
 	 						              enddate:t,
 	 						              eligibleCount:t,
 						               //	Partners:P,
-                            NumPartners:0
+                            numPartners:0
 
                             });
                           }
   function modifyBook(uint _bookID,uint _goal,uint _startdate,uint _enddate,uint _eligibleCount)
 	 isAuthor()   {
-	              Book memory temp=books[_bookID];
+	              Book storage temp=books[_bookID];
 	              temp.goal=_goal;
 	              temp.startdate=_startdate;
 	              temp.enddate=_enddate;
 	              temp.eligibleCount=_eligibleCount;
-
-
-
-
    }
    function structRet(uint n)  public returns(uint){
-   Book memory b= books[n];
-   return b.readershipStake;
+     Book memory b= books[n];
+     return b.readershipStake;
 
    }
    function nameret(uint n)  public returns(string){
-   Book memory b= books[n];
-    return b.tokenName;
+     Book memory b= books[n];
+     return b.tokenName;
 
    }
    function symbolret(uint n)  public returns(string){
-   Book memory b= books[n];
-   return b.tokenSymbol;
+     Book memory b= books[n];
+     return b.tokenSymbol;
 
    }
-    function partner(uint n,uint m)  public returns(uint){
-   Book memory b= books[n];
-  uint c= b.Partners[m];
-  return c;
-
+   function getBook(uint n) public  returns (Book) {
+     return books[n];
    }
+   function getOtherparams(uint n) returns(uint,uint,uint,uint){
+     Book memory b= books[n];
+     return(b.goal,b.startdate,b.enddate,b.eligibleCount);
+
+ }
+  function getPartnerShare(uint n,uint m) public  returns (uint) {
+    return  partnerShares[n][m];
+  }
+  function returnallShares(uint n) public returns (uint[]){
+    Book memory B=books[n];
+    uint sz=B.numPartners;
+    uint[] memory P = new uint[](sz);
+    for(uint i=0;i<sz;i++){
+    P[i]=getPartnerShare(n,i);
+
+  }
+  return P;
+}
 }
