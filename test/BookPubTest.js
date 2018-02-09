@@ -8,7 +8,7 @@ it("creates a book with readerstake of 1 ", function() {
        })
         .then(_instance => {
             instance = _instance;
-           return instance.publishBook(1,"MYBOOK","BK","boardroom");
+           return instance.createBookStruct(1,"MYBOOK","BK","boardroom");
         })
         .then(() =>{
 
@@ -28,7 +28,7 @@ it("creates a book with a tokenname of MYBOOK", function() {
        })
         .then(_instance => {
             instance = _instance;
-           return instance.publishBook(1,"MYBOOK","BK","boardroom");
+           return instance.createBookStruct(1,"MYBOOK","BK","boardroom");
         })
         .then(() =>{
 
@@ -48,7 +48,7 @@ it("creates a book with a tokensymbol of BK", function() {
        })
         .then(_instance => {
             instance = _instance;
-            return instance.publishBook(1,"MYBOOK","BK","boardroom");
+            return instance.createBookStruct(1,"MYBOOK","BK","boardroom");
         })
         .then(() =>{
 
@@ -68,10 +68,10 @@ it(" BOOKID will increment with iterate with function call", function() {
        })
         .then(_instance => {
             instance = _instance;
-            return instance.publishBook(1,"MYBOOK","BK","boardroom");
+            return instance.createBookStruct(1,"MYBOOK","BK","boardroom");
         }).then(() =>{
 
-             return instance.publishBook(1,"MYBOOK","BKK","boardroom");
+             return instance.createBookStruct(1,"MYBOOK","BKK","boardroom");
         }).then(() =>{
 
             return instance.symbolret.call(2);
@@ -93,10 +93,10 @@ it(" modify book works", function() {
        })
         .then(_instance => {
             instance = _instance;
-            return instance.publishBook(1,"MYBOOK","BK","boardroom");
+            return instance.createBookStruct(1,"MYBOOK","BK","boardroom");
         }).then(() =>{
 
-             return instance.modifyBook(1,100,2,4,300);
+             return instance.modifyBookStruct(1,100,2,4,300);
         }).then(() =>{
 
             return instance.getOtherparams.call(1);
@@ -119,7 +119,7 @@ it(" modify book works", function() {
 				       })
 				        .then(_instance => {
 				            instance = _instance;
-				            return instance.publishBook(1,"MYBOOK","BK","boardroom");
+				            return instance.createBookStruct(1,"MYBOOK","BK","boardroom");
 				        }).then(() =>{
 
 				             return instance.addPartner(1,100);

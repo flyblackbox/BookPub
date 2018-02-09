@@ -1,4 +1,4 @@
-//BookPub - Decentralized Book Self-Publishing Platform
+//BookStructPub - Decentralized BookStruct Self-Publishing Platform
 //Must work for many, many authors
 //Assume authors might have as many as 10,000,000 fans
 //Gonna be sweet!
@@ -21,6 +21,7 @@
 pragma solidity ^0.4.15;
 
 import "./Stoppable.sol";
+import "./Book.sol";
 
 contract BookPub is Stoppable {
     uint bookID;            //ID applied to book upon pub, incrementing after each new book
@@ -30,7 +31,7 @@ contract BookPub is Stoppable {
       }
     modifier isOwner() {
       require(msg.sender == owner);
-      _;}           //Owner of BookPub Platform
+      _;}           //Owner of BookStructPub Platform
     modifier isAuthor() {
       //  require(authors[msg.sender].totalEarned == 0);
       _;}                                          //Author exists in Author mapping
@@ -40,24 +41,24 @@ contract BookPub is Stoppable {
 
     mapping(address => Reader) readers;
     mapping(address => Author) authors;
-    mapping(uint => Book) books;
+    mapping(uint => BookStruct) books;
     //mapping(uint => uint) partnerShares;
     mapping(uint=>mapping(uint=>uint)) partnerShares;
     //Reader details [readersUsername, bookIDs purchased array]
     struct Reader {
       bytes readerUsername;      //Reader's username
       bool eligible;
-      //uint[] booksPurchased;       //BookIDs of all owned books
+      //uint[] booksPurchased;       //BookStructIDs of all owned books
       }
     //Author details [authorName, totalEarned, bookID published array]
     struct Author {
        bytes authorName;          //Author's legal name
        uint totalEarned;            //How much has this writer earned?
-       //uint[] booksPublished;       //BookIDs of all published books
+       //uint[] booksPublished;       //BookStructIDs of all published books
       }
 
-    //Book details [bookID, authorAddress, readershipStake, readers array]
-    struct Book {
+    //BookStruct details [bookID, authorAddress, readershipStake, readers array]
+    struct BookStruct {
       uint bookID;                 //Global book ID ++1
       address authorAddress;       //Who was the author? Can be used to access Authors mapping
       uint readershipStake;
@@ -96,7 +97,7 @@ contract BookPub is Stoppable {
 
 
 
-    function publishBook (uint _readershipStake,string _tokenName,string _tokenSymbol,string _governanceModel)
+    function createBookStruct (uint _readershipStake,string _tokenName,string _tokenSymbol,string _governanceModel)
       isAuthor() {
        bookID += 1;
 		   uint t=10;
@@ -104,7 +105,8 @@ contract BookPub is Stoppable {
 		   //uint[]  P;
 		   //P[1]=12;
 
-        books[bookID] = Book({
+
+        books[bookID] = BookStruct({
                             bookID: bookID,
                             authorAddress: msg.sender,
                             readershipStake: _readershipStake,
@@ -120,34 +122,45 @@ contract BookPub is Stoppable {
 
                             });
                           }
-  function modifyBook(uint _bookID,uint _goal,uint _startdate,uint _enddate,uint _eligibleCount)
+  function modifyBookStruct(uint _bookID,uint _goal,uint _startdate,uint _enddate,uint _eligibleCount)
 	 isAuthor()   {
-	              Book storage temp=books[_bookID];
+	              BookStruct storage temp=books[_bookID];
 	              temp.goal=_goal;
 	              temp.startdate=_startdate;
 	              temp.enddate=_enddate;
 	              temp.eligibleCount=_eligibleCount;
+
+      //bytes data=0xa50b4f0;
+      publishBook( _bookID ,  uint8(1000), uint(1000),  uint(0) );
    }
+
+  function publishBook(uint id, uint8 _decimalUnits,uint _initialAmount, uint _toBeShipped ){
+     BookStruct memory temp=books[id];
+
+     Book newBook = new Book(msg.sender, temp.readershipStake, temp.goal, _toBeShipped,
+                             temp.eligibleCount, _initialAmount, temp.tokenName,_decimalUnits,temp.startdate,temp.enddate,temp.tokenSymbol);
+   }
+
    function structRet(uint n)  public returns(uint){
-     Book memory b= books[n];
+     BookStruct memory b= books[n];
      return b.readershipStake;
 
    }
    function nameret(uint n)  public returns(string){
-     Book memory b= books[n];
+     BookStruct memory b= books[n];
      return b.tokenName;
 
    }
    function symbolret(uint n)  public returns(string){
-     Book memory b= books[n];
+     BookStruct memory b= books[n];
      return b.tokenSymbol;
 
    }
-   function getBook(uint n) public  returns (Book) {
+   function getBookStruct(uint n) public  returns (BookStruct) {
      return books[n];
    }
    function getOtherparams(uint n) returns(uint,uint,uint,uint){
-     Book memory b= books[n];
+     BookStruct memory b= books[n];
      return(b.goal,b.startdate,b.enddate,b.eligibleCount);
 
  }
@@ -155,7 +168,7 @@ contract BookPub is Stoppable {
     return  partnerShares[n][m];
   }
   function returnallShares(uint n) public returns (uint[]){
-    Book memory B=books[n];
+    BookStruct memory B=books[n];
     uint sz=B.numPartners;
     uint[] memory P = new uint[](sz);
     for(uint i=0;i<sz;i++){

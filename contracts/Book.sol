@@ -13,28 +13,35 @@ contract Book is HumanStandardToken {
   uint toBeShipped;
   uint userCount;
   uint eligibleCount;
+  uint startdate;
+  uint enddate;
+
   BookQueueLib.BookQueue queue;
 
   function Book
     (
      address _authorAddress,
-     bytes metadata,
+     //bytes metadata,
      uint _readershipStake,
      uint _goal,
      uint _toBeShipped,
-     uint _userCount,
+     //uint _userCount,
      uint _eligibleCount,
      uint _initialAmount,
      string _tokenName,
      uint8 _decimalUnits,
+     uint _startdate,
+     uint _enddate,
      string _tokenSymbol)
     HumanStandardToken(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol){
     authorAddress = _authorAddress;
     readershipStake = _readershipStake;
     goal = _goal;
-    userCount = _userCount;
+  //  userCount = _userCount;
     eligibleCount = _eligibleCount;
     toBeShipped = _toBeShipped;
+    startdate=_startdate;
+    enddate=_enddate;
   }
 
   enum ReaderStatus { Waiting, Eligible, Requested, Shipped, Confirmed }
@@ -53,9 +60,13 @@ contract Book is HumanStandardToken {
   event LogBookConfirmed(address reader);   //Author sends shipping confirmation
 
   mapping (address => Reader) readers;
-
+  mapping(uint=>uint) weeklysales;
   modifier goalMet {
     require (goalReached());
+    _;
+  }
+  modifier TimeValid {
+    require ((startdate>now)&&(enddate<now));
     _;
   }
 
@@ -92,7 +103,7 @@ contract Book is HumanStandardToken {
     queue.addToQueue(int(msg.value), msg.sender);
 
     balance += msg.value;
-
+    weekSaleSum( msg.value);
     return true;
   }
 
@@ -102,7 +113,17 @@ contract Book is HumanStandardToken {
   {
     return queue.getFirstInLine();
   }
-
+  function weekSaleSum(uint value){
+  //  uint currentday=((now-start)/86400)%7;
+    uint currentweek=((now-startdate)/86400)/7;
+    weeklysales[currentweek]+=value;
+  }
+  function ETA(uint week)returns (uint){
+    uint temp= weeklysales[week];
+    temp=temp/7;
+    uint ETA=goal/temp;
+    return(ETA);
+  }
   // Anyone can call this
   // Idealy the author should as soon as the goal is met
   function setFirstEligible()

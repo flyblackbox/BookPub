@@ -9,11 +9,13 @@ var Stoppable = artifacts.require('../contracts/Stoppable.sol');
 module.exports = function(deployer) {
   deployer.deploy(Owned);
   deployer.deploy(Stoppable);
-  deployer.deploy(BookPub);
   deployer.deploy(GroveLib);
   deployer.link(GroveLib, BookQueueLib);
   deployer.deploy(BookQueueLib);
   deployer.link(BookQueueLib, Book);
-  //deployer.deploy(Book);
+  deployer.link(BookQueueLib, BookPub);
+  deployer.deploy(BookPub);
+  deployer.deploy(Book);
   deployer.deploy(BookDistLib);
+  
 };

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.15;
 
 import "./GroveLib.sol";
-import "./BookPub.sol";
+//import "./BookPub.sol";
 
 library BookQueueLib {
   using GroveLib for GroveLib.Index;
@@ -18,6 +18,8 @@ library BookQueueLib {
   struct BookQueue {
     GroveLib.Index bucketIndex;
     mapping(bytes32 => BucketQueue) buckets;
+    mapping(uint => bytes32) bucketIDmap;
+    uint numberBuckets;
     bytes32 highestBucketID;
   }
 
@@ -26,7 +28,7 @@ library BookQueueLib {
     returns (BookQueue)
   {
     return BookQueue({
-      bucketIndex: GroveLib.Index(sha3(this, block.number)),
+      bucketIndex: GroveLib.Index(sha3(this, block.number)),numberBuckets:0,
           highestBucketID: 0
           });
   }
@@ -90,6 +92,8 @@ library BookQueueLib {
   {
     bucketID = bytes32(value);
     queue.bucketIndex.insert(bucketID, value);
+    queue.numberBuckets+=1;
+    queue.bucketIDmap[queue.numberBuckets]=bucketID;
     return bucketID;
   }
 
@@ -119,6 +123,23 @@ library BookQueueLib {
     var bucket = queue.buckets[bucketID];
     var bucketQueueID = bucket.bucketIndex.query('>=', bucket.firstIndex);
     return address(bucketQueueID);
+  }
+  function findAllFirst(BookQueue storage queue) returns(address[]){
+
+    address A;
+    bytes32 Temp;
+    BucketQueue BQ;
+
+    uint N=queue.numberBuckets;
+    address[] memory R= new address[](N);
+    for (uint i=1;i<N;i++){
+      Temp=queue.bucketIDmap[i];
+      BQ=queue.buckets[Temp];
+      var bucketQueueID= BQ.bucketIndex.query('>=',BQ.firstIndex );
+
+      R[i]= address(bucketQueueID);
+    }
+    return R;
   }
 
   function getLinePosition(BookQueue storage queue, uint index)
