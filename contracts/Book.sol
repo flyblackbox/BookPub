@@ -1,11 +1,11 @@
 pragma solidity ^0.4.15;
 
-import "./BookQueueLib.sol";
+import "./BookQueueLib2.sol";
 import "./BookDistLib.sol";
 import "tokens/HumanStandardToken.sol";
 
 contract Book is HumanStandardToken {
-  using BookQueueLib for BookQueueLib.BookQueue;
+  using BookQueueLib2 for BookQueueLib2.BookQueue;
   address authorAddress;
   uint readershipStake;
   uint balance;
@@ -15,8 +15,8 @@ contract Book is HumanStandardToken {
   uint eligibleCount;
   uint startdate;
   uint enddate;
-
-  BookQueueLib.BookQueue queue;
+  uint gasSaved;
+  BookQueueLib2.BookQueue queue;
 
   function Book
     (
@@ -61,8 +61,9 @@ contract Book is HumanStandardToken {
 
   mapping (address => Reader) readers;
   mapping(uint=>uint) weeklysales;
+//  mapping(address=>uint) balances;
   modifier goalMet {
-    require (goalReached());
+    require (goalReached()&&(now>enddate));
     _;
   }
   modifier TimeValid {
@@ -74,6 +75,12 @@ contract Book is HumanStandardToken {
     returns (bool goalMet)
   {
     return balance >= goal;
+  }
+
+  function goalFailed()
+    returns (bool goalFailed)
+  {
+    return ((balance<goal)&&(now>enddate));
   }
 
   function buyCoin()
@@ -88,19 +95,16 @@ contract Book is HumanStandardToken {
       userCount++;
 
       // Add the reader to the queue in the last position
-    } else { //Reader buys more coins later on
-      // Remove the reader to the queue he is a part of and move him to his new queue
-      queue.remove(msg.sender, int(balances[msg.sender]));
     }
 
     balances[msg.sender] += msg.value;
-    queue.addToQueue(int(balances[msg.sender]), msg.sender);
+    queue.insertReader( msg.sender,uint(balances[msg.sender]));
 
     if (goalReached()) {
       GoalMet(true);
     }
 
-    queue.addToQueue(int(msg.value), msg.sender);
+  //  queue.addToQueue(int(msg.value), msg.sender);
 
     balance += msg.value;
     weekSaleSum( msg.value);
@@ -108,10 +112,9 @@ contract Book is HumanStandardToken {
   }
 
   function getFirstInLine()
-    constant
-    returns (address readerAddress)
+
   {
-    return queue.getFirstInLine();
+
   }
   function weekSaleSum(uint value){
   //  uint currentday=((now-start)/86400)%7;
@@ -132,18 +135,31 @@ contract Book is HumanStandardToken {
   {
     require(eligibleCount <= toBeShipped);
     eligibleCount++;
-    address first = queue.getFirstInLine();
-    readers[first].status = ReaderStatus.Eligible;
-    queue.remove(first, int(balances[first]));
+    //address first = queue.getFirstInLine();
+    //readers[first].status = ReaderStatus.Eligible;
+  //  queue.remove(first, int(balances[first]));
     return true;
   }
 
   //((Author)) withdraws the capital they earned through coin sales
   function withdrawCapital()
+    goalMet
     /*isAuthor()*/{
     authorAddress.transfer(balance);
   }
+  function withdrawInvestment(){
+    uint temp=balances[msg.sender];
+    balances[msg.sender]=0;
+    msg.sender.transfer(temp);
 
+  }
+  function claimCoins()
+     goalMet
+  {
+    uint temp=balances[msg.sender];
+    balances[msg.sender]=0;
+    msg.sender.transfer((temp/balance));
+  }
   //Readers can claim hard copy after they become eligible
   function requestDelivery (address readerAddress) returns (bool success) {
     require(readers[readerAddress].status == ReaderStatus.Eligible);
