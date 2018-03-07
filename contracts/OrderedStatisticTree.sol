@@ -134,8 +134,14 @@ library OrderedStatisticTree {
         }
     }
     function insert(Index storage index,uint value) {
-        if (value==0)
+        if(index.numberofInserts==0){
+         //index.nodes[0]=Node(0,true,0,0,0);
+         
+        }
+         index.numberofInserts+=1;
+        if (value==0){
             index.nodes[value].dupes++;
+        }
         else{
             insert_helper(index,0,true,value);
         }
@@ -340,6 +346,9 @@ library OrderedStatisticTree {
     function node_dupes(Index storage index, uint value) constant returns (uint dupes){
         dupes=index.nodes[value].dupes;
     }
+    function numInserts(Index storage index) returns(uint){
+	return index.numberofInserts;
+	}	
     struct Node {
         mapping (bool => uint) children; //false left child,true right child
         uint parent;
@@ -351,8 +360,9 @@ library OrderedStatisticTree {
     //mapping(uint => Node) nodes;
 
     struct Index {
-            //bytes32 root;
+            
             mapping (uint => Node) nodes;
+            uint numberofInserts;
     }
 
 }

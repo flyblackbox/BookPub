@@ -26,7 +26,7 @@ import "./Book.sol";
 contract BookPub is Stoppable {
     uint bookID;            //ID applied to book upon pub, incrementing after each new book
 
-    function BookPub(address bookAuthor){
+    function BookPub(){
         bookID = 0;
       }
     modifier isOwner() {
